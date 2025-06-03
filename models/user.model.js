@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true },
+  email: { type: String, required: false, unique: true, sparse: true },
+  phoneNumber: { type: String, required: false, unique: true, sparse: true },
   password: { type: String, required: true },
   displayName: { type: String, required: true },
   birthday: { type: String, required: true },
@@ -10,12 +11,10 @@ const userSchema = new mongoose.Schema({
   bio: { type: String, required: false },
   profilePic: {
     type: String,
-    default:
-      'https://archive.org/download/discordprofilepictures/discordgrey.png',
+    default: 'https://discord-clone-etat.onrender.com/uploads/default.png',
   },
   createdAt: { type: Date, default: Date.now },
-})
-
+});
 const User = mongoose.model('User', userSchema)
 
 module.exports = User
