@@ -113,14 +113,16 @@ app.get('/search/users', async (req, res) => {
         { username: { $regex: query, $options: 'i' } },
         { displayName: { $regex: query, $options: 'i' } },
         { email: { $regex: query, $options: 'i' } },
+        { phoneNumber: { $regex: query, $options: 'i' } },
       ],
-    }).select('_id username displayName profilePic');
+    }).select('_id username displayName profilePic email phoneNumber');
     res.json(users);
   } catch (err) {
     console.error('Error searching users:', err);
     res.status(500).json({ error: 'Error searching users' });
   }
 });
+
 
 // API to add friend
 app.post('/friends/add', bodyParser.json(), async (req, res) => {
