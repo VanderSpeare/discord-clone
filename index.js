@@ -222,6 +222,7 @@ app.get('/friends/list', async (req, res) => {
       username: friend.friendId.username,
       displayName: friend.friendId.displayName,
       profilePic: friend.friendId.profilePic,
+      status: friend.status, // Thêm trạng thái
     }));
     res.json(friendList);
   } catch (err) {
