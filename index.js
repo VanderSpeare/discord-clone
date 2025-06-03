@@ -14,6 +14,8 @@ require('dotenv').config();
 
 // Import models
 const Message = require('./models/message.model');
+const Friend = require('./models/friend.model');
+const User = require('./models/user.model');
 
 const app = express();
 const httpServer = createServer(app);
@@ -96,6 +98,84 @@ app.get('/messages/:roomId', async (req, res) => {
   } catch (err) {
     console.error('Error fetching messages:', err);
     res.status(500).json({ error: 'Error fetching messages' });
+  }
+});
+
+// API to search users
+app.get('/search/users', async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ error: 'Query parameter is required' });
+    }
+    const users = await User.find({
+      $or: [
+        { username: { $regex: query, $options: 'i' } },
+        { displayName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } },
+      ],
+    }).select('_id username displayName profilePic');
+    res.json(users);
+  } catch (err) {
+    console.error('Error searching users:', err);
+    res.status(500).json({ error: 'Error searching users' });
+  }
+});
+
+// API to add friend
+app.post('/friends/add', bodyParser.json(), async (req, res) => {
+  try {
+    const { userId, friendId } = req.body;
+    if (!userId || !friendId) {
+      return res.status(400).json({ error: 'userId and friendId are required' });
+    }
+    if (userId === friendId) {
+      return res.status(400).json({ error: 'Cannot add yourself as a friend' });
+    }
+
+    const existingFriend = await Friend.findOne({
+      $or: [
+        { userId, friendId },
+        { userId: friendId, friendId: userId },
+      ],
+    });
+    if (existingFriend) {
+      return res.status(400).json({ error: 'Friend request already exists' });
+    }
+
+    const newFriend = new Friend({
+      userId,
+      friendId,
+      status: 'pending',
+    });
+    await newFriend.save();
+    res.status(200).json({ message: 'Friend request sent' });
+  } catch (err) {
+    console.error('Error adding friend:', err);
+    res.status(500).json({ error: 'Error adding friend' });
+  }
+});
+
+// API to list friends
+app.get('/friends/list', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    const friends = await Friend.find({
+      $or: [{ userId, status: 'accepted' }, { friendId: userId, status: 'accepted' }],
+    }).populate('friendId', 'username displayName profilePic');
+    const friendList = friends.map(friend => ({
+      friendId: friend.friendId._id,
+      username: friend.friendId.username,
+      displayName: friend.friendId.displayName,
+      profilePic: friend.friendId.profilePic,
+    }));
+    res.json(friendList);
+  } catch (err) {
+    console.error('Error fetching friends:', err);
+    res.status(500).json({ error: 'Error fetching friends' });
   }
 });
 
