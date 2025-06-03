@@ -2,7 +2,8 @@ scalar Upload
 
 type User {
   _id: ID!
-  email: String!
+  email: String
+  phoneNumber: String
   password: String!
   displayName: String!
   username: String!
@@ -19,7 +20,7 @@ type Query {
 
 type Mutation {
   deleteUser(id: ID!): String
-  createUser(email: String!, password: String!, displayName: String!, birthday: String!): User
+  createUser(email: String, password: String!, displayName: String!, birthday: String!,phoneNumber: String): User
   signIn(email: String!, password: String!): AuthData
   updateUser(id: ID!, displayName: String, bio: String, status: String, profilePic: Upload): User
 }
