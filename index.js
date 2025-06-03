@@ -215,14 +215,17 @@ app.get('/friends/list', async (req, res) => {
       return res.status(400).json({ error: 'userId is required' });
     }
     const friends = await Friend.find({
-      $or: [{ userId, status: 'accepted' }, { friendId: userId, status: 'accepted' }],
+      $or: [
+        { userId }, // Lấy tất cả trạng thái cho userId
+        { friendId: userId }, // Lấy tất cả trạng thái cho friendId
+      ],
     }).populate('friendId', 'username displayName profilePic');
     const friendList = friends.map(friend => ({
       friendId: friend.friendId._id,
       username: friend.friendId.username,
       displayName: friend.friendId.displayName,
       profilePic: friend.friendId.profilePic,
-      status: friend.status, // Thêm trạng thái
+      status: friend.status,
     }));
     res.json(friendList);
   } catch (err) {
