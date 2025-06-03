@@ -211,29 +211,37 @@ app.post('/friends/accept', bodyParser.json(), async (req, res) => {
 app.get('/friends/list', async (req, res) => {
   try {
     const { userId } = req.query;
+    console.log('Fetching friends for userId:', userId);
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
     const friends = await Friend.find({
       $or: [
-        { userId }, // Lấy tất cả trạng thái cho userId
-        { friendId: userId }, // Lấy tất cả trạng thái cho friendId
+        { userId },
+        { friendId: userId },
       ],
     }).populate('friendId', 'username displayName profilePic');
-    const friendList = friends.map(friend => ({
-      friendId: friend.friendId._id,
-      username: friend.friendId.username,
-      displayName: friend.friendId.displayName,
-      profilePic: friend.friendId.profilePic,
-      status: friend.status,
-    }));
+    console.log('Raw friends data:', friends);
+    const friendList = friends.map(friend => {
+      if (!friend.friendId) {
+        console.log('Invalid friendId in record:', friend);
+        return null;
+      }
+      return {
+        friendId: friend.friendId._id,
+        username: friend.friendId.username || 'Unknown',
+        displayName: friend.friendId.displayName || 'Unknown',
+        profilePic: friend.friendId.profilePic || 'https://discord-clone-etat.onrender.com/uploads/default.png',
+        status: friend.status,
+      };
+    }).filter(item => item !== null);
+    console.log('Processed friendList:', friendList);
     res.json(friendList);
   } catch (err) {
     console.error('Error fetching friends:', err);
-    res.status(500).json({ error: 'Error fetching friends' });
+    res.status(500).json({ error: 'Error fetching friends: ' + err.message });
   }
 });
-
 // Express middleware
 app.use(bodyParser.json());
 app.use(
