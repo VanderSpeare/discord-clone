@@ -143,19 +143,68 @@ app.post('/friends/add', bodyParser.json(), async (req, res) => {
       return res.status(400).json({ error: 'Friend request already exists' });
     }
 
+    // Tạo yêu cầu kết bạn
     const newFriend = new Friend({
       userId,
       friendId,
       status: 'pending',
     });
     await newFriend.save();
+
+    // Tự động tạo yêu cầu ngược lại (tùy chọn)
+    const reverseFriend = new Friend({
+      userId: friendId,
+      friendId: userId,
+      status: 'pending',
+    });
+    await reverseFriend.save();
+
     res.status(200).json({ message: 'Friend request sent' });
   } catch (err) {
     console.error('Error adding friend:', err);
     res.status(500).json({ error: 'Error adding friend' });
   }
 });
+// API to accept friend request
+app.post('/friends/accept', bodyParser.json(), async (req, res) => {
+  try {
+    const { userId, friendId } = req.body;
+    if (!userId || !friendId) {
+      return res.status(400).json({ error: 'userId and friendId are required' });
+    }
 
+    // Tìm yêu cầu kết bạn từ friendId đến userId
+    const friendRequest = await Friend.findOne({
+      userId: friendId,
+      friendId: userId,
+      status: 'pending',
+    });
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    // Cập nhật trạng thái thành accepted
+    friendRequest.status = 'accepted';
+    await friendRequest.save();
+
+    // Cập nhật yêu cầu ngược lại (nếu có)
+    const reverseRequest = await Friend.findOne({
+      userId,
+      friendId,
+      status: 'pending',
+    });
+    if (reverseRequest) {
+      reverseRequest.status = 'accepted';
+      await reverseRequest.save();
+    }
+
+    res.status(200).json({ message: 'Friend request accepted' });
+  } catch (err) {
+    console.error('Error accepting friend request:', err);
+    res.status(500).json({ error: 'Error accepting friend request' });
+  }
+});
 // API to list friends
 app.get('/friends/list', async (req, res) => {
   try {
